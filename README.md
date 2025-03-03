@@ -1,50 +1,75 @@
-# Welcome to your Expo app 👋
+# LeetCode Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile application for practicing LeetCode problems on the go. Built with React Native and Expo.
 
-## Get started
+## Features
 
-1. Install dependencies
+-   Browse and search LeetCode problems
+-   Filter problems by difficulty and topics
+-   View problem descriptions in a mobile-friendly format
+-   Save personal notes for each problem
+-   Bookmark favorite problems for later review
+-   View community solutions
 
-   ```bash
-   npm install
-   ```
+## Technologies Used
 
-2. Start the app
+-   React Native / Expo
+-   TypeScript
+-   Supabase for authentication and data storage
+-   React Navigation for routing
 
-   ```bash
+## Getting Started
+
+### Prerequisites
+
+-   Node.js (v14 or newer)
+-   npm or yarn
+-   Expo CLI (`npm install -g expo-cli`)
+
+### Installation
+
+1. Clone the repository
+
+    ```
+    git clone https://github.com/yourusername/leetcode-mobile.git
+    cd leetcode-mobile
+    ```
+
+2. Install dependencies
+
+    ```
+    npm install
+    ```
+
+3. Start the development server
+
+    ```
     npx expo start
-   ```
+    ```
 
-In the output, you'll find options to open the app in a
+4. Run on a device or emulator
+    - Scan the QR code with the Expo Go app on your device
+    - Press 'a' to run on an Android emulator
+    - Press 'i' to run on an iOS simulator
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Usage
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+-   **Home Screen**: Browse through LeetCode problems with a swipeable card interface
+-   **Filter**: Tap the filter icon to filter problems by difficulty and topics
+-   **Problem Description**: View the full problem description with formatted text and examples
+-   **Notes**: Save personal notes for each problem to track your progress and ideas
+-   **Solutions**: View community solutions for problems
+-   **Bookmarks**: Save problems to revisit later in the Profile tab
 
-## Get a fresh project
+## Contributing
 
-When you're ready, run:
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-```bash
-npm run reset-project
-```
+## License
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Learn more
+## Acknowledgments
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+-   LeetCode for providing the problem data
+-   The React Native and Expo communities for their excellent documentation and support
