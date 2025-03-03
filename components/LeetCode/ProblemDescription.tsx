@@ -1,24 +1,30 @@
-import React from "react";
-import { StyleSheet, Modal, ScrollView, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, Modal, ScrollView, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Ionicons } from "@expo/vector-icons";
 import { LeetCodeProblem } from "./types";
 import WebView from "react-native-webview";
+import { useUser } from "@/contexts/UserContext";
+import { AuthModal } from "@/components/Auth/AuthModal";
 
 interface ProblemDescriptionProps {
     visible: boolean;
     onClose: () => void;
     problem: LeetCodeProblem | null;
+    onOpenNotes: (problem: LeetCodeProblem) => void;
 }
 
 export function ProblemDescription({
     visible,
     onClose,
     problem,
+    onOpenNotes,
 }: ProblemDescriptionProps) {
     const [description, setDescription] = React.useState<string>("");
     const [loading, setLoading] = React.useState<boolean>(false);
+    const [authModalVisible, setAuthModalVisible] = useState(false);
+    const { user } = useUser();
 
     React.useEffect(() => {
         if (problem && visible) {
@@ -60,39 +66,78 @@ export function ProblemDescription({
         }
     };
 
+    const handleOpenNotes = () => {
+        if (!user) {
+            setAuthModalVisible(true);
+            return;
+        }
+
+        // Close description modal and open notes modal
+        onClose();
+        if (problem) {
+            onOpenNotes(problem);
+        }
+    };
+
+    const handleAuthSuccess = () => {
+        setAuthModalVisible(false);
+        onClose();
+        if (problem) {
+            onOpenNotes(problem);
+        }
+    };
+
     if (!problem) return null;
 
     return (
-        <Modal
-            animationType="slide"
-            transparent={true}
-            visible={visible}
-            onRequestClose={onClose}
-        >
-            <ThemedView style={styles.modalContainer}>
-                <ThemedView style={styles.modalContent}>
-                    <ThemedView style={styles.modalHeader}>
-                        <ThemedText
-                            type="title"
-                            numberOfLines={1}
-                            style={styles.modalTitle}
-                        >
-                            {problem.title}
-                        </ThemedText>
-                        <TouchableOpacity onPress={onClose}>
-                            <Ionicons name="close" size={24} color="#888" />
-                        </TouchableOpacity>
-                    </ThemedView>
+        <>
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={visible}
+                onRequestClose={onClose}
+            >
+                <ThemedView style={styles.modalContainer}>
+                    <ThemedView style={styles.modalContent}>
+                        <ThemedView style={styles.modalHeader}>
+                            <ThemedText
+                                type="title"
+                                numberOfLines={1}
+                                style={styles.modalTitle}
+                            >
+                                {problem.title}
+                            </ThemedText>
 
-                    {loading ? (
-                        <ThemedView style={styles.loadingContainer}>
-                            <ThemedText>Loading description...</ThemedText>
+                            <View style={styles.headerButtons}>
+                                <TouchableOpacity
+                                    style={styles.notesButton}
+                                    onPress={handleOpenNotes}
+                                >
+                                    <Ionicons
+                                        name="create-outline"
+                                        size={20}
+                                        color="#3e4a8a"
+                                    />
+                                    <ThemedText style={styles.notesButtonText}>
+                                        Notes
+                                    </ThemedText>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity onPress={onClose}>
+                                    <Ionicons name="close" size={24} color="#888" />
+                                </TouchableOpacity>
+                            </View>
                         </ThemedView>
-                    ) : (
-                        <WebView
-                            originWhitelist={["*"]}
-                            source={{
-                                html: `
+
+                        {loading ? (
+                            <ThemedView style={styles.loadingContainer}>
+                                <ThemedText>Loading description...</ThemedText>
+                            </ThemedView>
+                        ) : (
+                            <WebView
+                                originWhitelist={["*"]}
+                                source={{
+                                    html: `
                   <html>
                     <head>
                       <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -122,13 +167,20 @@ export function ProblemDescription({
                     </body>
                   </html>
                 `,
-                            }}
-                            style={styles.webView}
-                        />
-                    )}
+                                }}
+                                style={styles.webView}
+                            />
+                        )}
+                    </ThemedView>
                 </ThemedView>
-            </ThemedView>
-        </Modal>
+            </Modal>
+
+            <AuthModal
+                visible={authModalVisible}
+                onClose={() => setAuthModalVisible(false)}
+                onSuccess={handleAuthSuccess}
+            />
+        </>
     );
 }
 
@@ -163,6 +215,25 @@ const styles = StyleSheet.create({
         flex: 1,
         marginRight: 10,
         fontSize: 18,
+    },
+    headerButtons: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    notesButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginRight: 15,
+        backgroundColor: "#f0f0f0",
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 15,
+    },
+    notesButtonText: {
+        marginLeft: 5,
+        color: "#3e4a8a",
+        fontWeight: "500",
+        fontSize: 14,
     },
     webView: {
         flex: 1,

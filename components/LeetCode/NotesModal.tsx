@@ -14,32 +14,35 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Ionicons } from "@expo/vector-icons";
 import { LeetCodeProblem } from "./types";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useUser } from "@/contexts/UserContext";
 import { AuthModal } from "@/components/Auth/AuthModal";
+import { NotesService } from "@/services/NotesService";
 
 interface NotesModalProps {
     visible: boolean;
     onClose: () => void;
     problem: LeetCodeProblem | null;
+    onOpenDescription?: (problem: LeetCodeProblem) => void;
 }
 
-export function NotesModal({ visible, onClose, problem }: NotesModalProps) {
+export function NotesModal({
+    visible,
+    onClose,
+    problem,
+    onOpenDescription,
+}: NotesModalProps) {
     const [notes, setNotes] = useState<string>("");
     const [authModalVisible, setAuthModalVisible] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
     const { user } = useUser();
 
     useEffect(() => {
-        if (problem && visible) {
-            loadNotes(problem.titleSlug);
+        if (problem && visible && user) {
+            loadNotes();
         }
-    }, [problem, visible]);
-
-    useEffect(() => {
-        //console.log("NotesModal - visible prop changed to:", visible);
-        //console.log("NotesModal - problem:", problem?.title);
-    }, [visible, problem]);
+    }, [problem, visible, user]);
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () => {
@@ -55,20 +58,22 @@ export function NotesModal({ visible, onClose, problem }: NotesModalProps) {
         };
     }, []);
 
-    const loadNotes = async (titleSlug: string) => {
+    const loadNotes = async () => {
+        if (!problem || !user) return;
+
         try {
-            const savedNotes = await AsyncStorage.getItem(`notes_${titleSlug}`);
-            if (savedNotes) {
-                setNotes(savedNotes);
-            } else {
-                setNotes("");
-            }
+            setLoading(true);
+            const savedNotes = await NotesService.getNotes(user.id, problem.titleSlug);
+            setNotes(savedNotes);
+            setHasChanges(false);
         } catch (error) {
             console.error("Error loading notes:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const saveNotes = async () => {
+    const saveNotes = async (showAlert = true) => {
         if (!problem) return;
 
         if (!user) {
@@ -77,24 +82,50 @@ export function NotesModal({ visible, onClose, problem }: NotesModalProps) {
         }
 
         try {
-            await AsyncStorage.setItem(`notes_${problem.titleSlug}`, notes);
-            Alert.alert("Success", "Your notes have been saved.");
+            setLoading(true);
+            await NotesService.saveNotes(user.id, problem.titleSlug, notes);
+            setHasChanges(false);
+            if (showAlert) {
+                Alert.alert("Success", "Your notes have been saved.");
+            }
         } catch (error) {
             console.error("Error saving notes:", error);
             Alert.alert("Error", "Failed to save your notes. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleClose = () => {
-        if (notes.trim().length > 0 && user) {
-            saveNotes();
+        if (hasChanges && notes.trim().length > 0 && user) {
+            saveNotes(false); // Save without alert when closing
         }
         onClose();
+    };
+
+    const handleOpenDescription = () => {
+        if (!problem) return;
+
+        // Save notes if there are changes
+        if (hasChanges && notes.trim().length > 0 && user) {
+            saveNotes(false); // Save without alert when switching to description
+        }
+
+        // Close notes modal and open description modal
+        onClose();
+        if (onOpenDescription) {
+            onOpenDescription(problem);
+        }
     };
 
     const handleAuthSuccess = () => {
         setAuthModalVisible(false);
         saveNotes();
+    };
+
+    const handleTextChange = (text: string) => {
+        setNotes(text);
+        setHasChanges(true);
     };
 
     if (!problem) return null;
@@ -105,10 +136,7 @@ export function NotesModal({ visible, onClose, problem }: NotesModalProps) {
                 animationType="slide"
                 transparent={true}
                 visible={visible}
-                onRequestClose={() => {
-                    // console.log("NotesModal - system back button pressed");
-                    handleClose();
-                }}
+                onRequestClose={handleClose}
             >
                 <ThemedView style={styles.modalContainer}>
                     <KeyboardAvoidingView
@@ -124,9 +152,28 @@ export function NotesModal({ visible, onClose, problem }: NotesModalProps) {
                                 >
                                     Notes: {problem.title}
                                 </ThemedText>
-                                <TouchableOpacity onPress={handleClose}>
-                                    <Ionicons name="close" size={24} color="#888" />
-                                </TouchableOpacity>
+                                <View style={styles.headerButtons}>
+                                    {onOpenDescription && (
+                                        <TouchableOpacity
+                                            style={styles.descriptionButton}
+                                            onPress={handleOpenDescription}
+                                        >
+                                            <Ionicons
+                                                name="document-text-outline"
+                                                size={20}
+                                                color="#3e4a8a"
+                                            />
+                                            <ThemedText
+                                                style={styles.descriptionButtonText}
+                                            >
+                                                Description
+                                            </ThemedText>
+                                        </TouchableOpacity>
+                                    )}
+                                    <TouchableOpacity onPress={handleClose}>
+                                        <Ionicons name="close" size={24} color="#888" />
+                                    </TouchableOpacity>
+                                </View>
                             </ThemedView>
 
                             <View style={styles.notesContainer}>
@@ -134,11 +181,12 @@ export function NotesModal({ visible, onClose, problem }: NotesModalProps) {
                                     style={styles.notesInput}
                                     multiline
                                     value={notes}
-                                    onChangeText={setNotes}
+                                    onChangeText={handleTextChange}
                                     placeholder="Write your notes here..."
                                     placeholderTextColor="#888"
                                     autoFocus
                                     textAlignVertical="top"
+                                    editable={!loading}
                                 />
                             </View>
 
@@ -146,11 +194,13 @@ export function NotesModal({ visible, onClose, problem }: NotesModalProps) {
                                 style={[
                                     styles.saveButton,
                                     keyboardVisible && styles.saveButtonWithKeyboard,
+                                    loading && styles.saveButtonDisabled,
                                 ]}
-                                onPress={saveNotes}
+                                onPress={() => saveNotes(true)} // Explicit save with alert
+                                disabled={loading}
                             >
                                 <ThemedText style={styles.saveButtonText}>
-                                    Save Notes
+                                    {loading ? "Saving..." : "Save Notes"}
                                 </ThemedText>
                             </TouchableOpacity>
                         </ThemedView>
@@ -199,6 +249,25 @@ const styles = StyleSheet.create({
         marginRight: 10,
         fontSize: 18,
     },
+    headerButtons: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    descriptionButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginRight: 15,
+        backgroundColor: "#f0f0f0",
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 15,
+    },
+    descriptionButtonText: {
+        marginLeft: 5,
+        color: "#3e4a8a",
+        fontWeight: "500",
+        fontSize: 14,
+    },
     notesContainer: {
         flex: 1,
         backgroundColor: "white",
@@ -222,6 +291,9 @@ const styles = StyleSheet.create({
     },
     saveButtonWithKeyboard: {
         bottom: 20,
+    },
+    saveButtonDisabled: {
+        backgroundColor: "#a0a0a0",
     },
     saveButtonText: {
         color: "white",

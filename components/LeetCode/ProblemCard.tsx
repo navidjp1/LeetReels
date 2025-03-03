@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LeetCodeProblem } from "./types";
 import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/lib/supabase";
+import { AuthModal } from "@/components/Auth/AuthModal";
 
 interface ProblemCardProps {
     item: LeetCodeProblem;
@@ -28,6 +29,9 @@ export function ProblemCard({
 }: ProblemCardProps) {
     const [showTopics, setShowTopics] = useState(false);
     const fadeAnim = useRef(new Animated.Value(0)).current;
+    const { user } = useUser();
+    const [authModalVisible, setAuthModalVisible] = useState(false);
+    const [pendingAction, setPendingAction] = useState<string | null>(null);
 
     const toggleTopics = () => {
         const newValue = !showTopics;
@@ -47,94 +51,130 @@ export function ProblemCard({
             ? "#ffc01e"
             : "#ff375f";
 
+    const handleOpenNotes = () => {
+        if (!user) {
+            setPendingAction("notes");
+            setAuthModalVisible(true);
+            return;
+        }
+        onOpenNotes(item);
+    };
+
+    const handleAuthSuccess = () => {
+        setAuthModalVisible(false);
+        if (pendingAction === "notes") {
+            onOpenNotes(item);
+        }
+        setPendingAction(null);
+    };
+
     return (
-        <ThemedView style={[styles.problemCard, { height: height - 100 }]}>
-            <ThemedView style={styles.problemHeader}>
-                <ThemedText type="title">{item.title}</ThemedText>
-            </ThemedView>
-
-            <ThemedView style={styles.problemSubheader}>
-                <ThemedText type="subtitle">#{item.frontendQuestionId}</ThemedText>
-                <TouchableOpacity onPress={() => onBookmark(item)}>
-                    <Ionicons
-                        name={isBookmarked ? "bookmark" : "bookmark-outline"}
-                        size={24}
-                        color="#3e4a8a"
-                    />
-                </TouchableOpacity>
-            </ThemedView>
-
-            <ThemedView style={styles.statsContainer}>
-                <ThemedText>Acceptance Rate: {Math.round(item.acRate)}%</ThemedText>
-                <ThemedText style={{ color: difficultyColor, fontWeight: "bold" }}>
-                    {item.difficulty}
-                </ThemedText>
-            </ThemedView>
-
-            <TouchableOpacity
-                style={styles.topicsHeader}
-                onPress={toggleTopics}
-                activeOpacity={0.7}
-            >
-                <ThemedView style={styles.topicsTitleContainer}>
-                    <ThemedText type="subtitle">Topics</ThemedText>
-                    <Ionicons
-                        name={showTopics ? "eye-off-outline" : "eye-outline"}
-                        size={20}
-                        color="#3e4a8a"
-                        style={{ marginLeft: 8, opacity: 0.7 }}
-                    />
+        <>
+            <ThemedView style={[styles.problemCard, { height: height - 100 }]}>
+                <ThemedView style={styles.problemHeader}>
+                    <ThemedText type="title">{item.title}</ThemedText>
                 </ThemedView>
-            </TouchableOpacity>
 
-            <Animated.View style={[styles.tagsContainerWrapper, { opacity: fadeAnim }]}>
-                <ThemedView style={styles.tagsContainer}>
-                    {item.topicTags.map((tag) => (
-                        <ThemedView key={tag.id} style={styles.tag}>
-                            <ThemedText style={styles.tagText}>{tag.name}</ThemedText>
-                        </ThemedView>
-                    ))}
-                </ThemedView>
-            </Animated.View>
-
-            <ThemedView style={styles.actionButtonsContainer}>
-                <TouchableOpacity
-                    style={styles.descriptionButton}
-                    onPress={() => onOpenDescription(item)}
-                >
-                    <Ionicons name="document-text-outline" size={28} color="#fff" />
-                    <ThemedText style={styles.descriptionButtonText}>
-                        View Description
-                    </ThemedText>
-                </TouchableOpacity>
-
-                <ThemedView style={styles.secondaryButtonsContainer}>
-                    <TouchableOpacity
-                        style={styles.secondaryButton}
-                        onPress={() => onOpenNotes(item)}
-                    >
-                        <Ionicons name="create-outline" size={24} color="#3e4a8a" />
-                        <ThemedText style={styles.secondaryButtonText}>Notes</ThemedText>
+                <ThemedView style={styles.problemSubheader}>
+                    <ThemedText type="subtitle">#{item.frontendQuestionId}</ThemedText>
+                    <TouchableOpacity onPress={() => onBookmark(item)}>
+                        <Ionicons
+                            name={isBookmarked ? "bookmark" : "bookmark-outline"}
+                            size={24}
+                            color="#3e4a8a"
+                        />
                     </TouchableOpacity>
+                </ThemedView>
 
+                <ThemedView style={styles.statsContainer}>
+                    <ThemedText>Acceptance Rate: {Math.round(item.acRate)}%</ThemedText>
+                    <ThemedText style={{ color: difficultyColor, fontWeight: "bold" }}>
+                        {item.difficulty}
+                    </ThemedText>
+                </ThemedView>
+
+                <TouchableOpacity
+                    style={styles.topicsHeader}
+                    onPress={toggleTopics}
+                    activeOpacity={0.7}
+                >
+                    <ThemedView style={styles.topicsTitleContainer}>
+                        <ThemedText type="subtitle">Topics</ThemedText>
+                        <Ionicons
+                            name={showTopics ? "eye-off-outline" : "eye-outline"}
+                            size={20}
+                            color="#3e4a8a"
+                            style={{ marginLeft: 8, opacity: 0.7 }}
+                        />
+                    </ThemedView>
+                </TouchableOpacity>
+
+                <Animated.View
+                    style={[styles.tagsContainerWrapper, { opacity: fadeAnim }]}
+                >
+                    <ThemedView style={styles.tagsContainer}>
+                        {item.topicTags.map((tag) => (
+                            <ThemedView key={tag.id} style={styles.tag}>
+                                <ThemedText style={styles.tagText}>{tag.name}</ThemedText>
+                            </ThemedView>
+                        ))}
+                    </ThemedView>
+                </Animated.View>
+
+                <ThemedView style={styles.actionButtonsContainer}>
                     <TouchableOpacity
-                        style={styles.secondaryButton}
-                        onPress={() => onOpenSolution(item)}
+                        style={styles.descriptionButton}
+                        onPress={() => onOpenDescription(item)}
                     >
-                        <Ionicons name="code-slash-outline" size={24} color="#3e4a8a" />
-                        <ThemedText style={styles.secondaryButtonText}>
-                            Solution
+                        <Ionicons name="document-text-outline" size={28} color="#fff" />
+                        <ThemedText style={styles.descriptionButtonText}>
+                            View Description
                         </ThemedText>
                     </TouchableOpacity>
+
+                    <ThemedView style={styles.secondaryButtonsContainer}>
+                        <TouchableOpacity
+                            style={styles.secondaryButton}
+                            onPress={handleOpenNotes}
+                        >
+                            <Ionicons name="create-outline" size={24} color="#3e4a8a" />
+                            <ThemedText style={styles.secondaryButtonText}>
+                                Notes
+                            </ThemedText>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.secondaryButton}
+                            onPress={() => onOpenSolution(item)}
+                        >
+                            <Ionicons
+                                name="code-slash-outline"
+                                size={24}
+                                color="#3e4a8a"
+                            />
+                            <ThemedText style={styles.secondaryButtonText}>
+                                Solution
+                            </ThemedText>
+                        </TouchableOpacity>
+                    </ThemedView>
+                </ThemedView>
+
+                <ThemedView style={styles.swipeHint}>
+                    <ThemedText style={styles.swipeText}>
+                        Swipe up for next problem
+                    </ThemedText>
                 </ThemedView>
             </ThemedView>
 
-            <ThemedView style={styles.swipeHint}>
-                <ThemedText style={styles.swipeText}>
-                    Swipe up for next problem
-                </ThemedText>
-            </ThemedView>
-        </ThemedView>
+            <AuthModal
+                visible={authModalVisible}
+                onClose={() => {
+                    setAuthModalVisible(false);
+                    setPendingAction(null);
+                }}
+                onSuccess={handleAuthSuccess}
+            />
+        </>
     );
 }
 

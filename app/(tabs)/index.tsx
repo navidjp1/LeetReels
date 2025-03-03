@@ -354,10 +354,10 @@ export default function HomeScreen() {
 
     // Update the useEffect for handling selected problem
     useEffect(() => {
-        console.log("selectedProblem changed:", selectedProblem?.title);
+        //console.log("selectedProblem changed:", selectedProblem?.title);
 
         if (selectedProblem) {
-            console.log("Resetting problems list with selected problem first");
+            //console.log("Resetting problems list with selected problem first");
 
             // Reset the problems list to just show the selected problem first
             setProblems((prevProblems) => {
@@ -369,11 +369,11 @@ export default function HomeScreen() {
             });
 
             // Scroll to top
-            console.log("Scrolling to top");
+            //console.log("Scrolling to top");
             flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
 
             // Clear the selected problem to avoid infinite re-renders
-            console.log("Setting timeout to clear selectedProblem");
+            //console.log("Setting timeout to clear selectedProblem");
             setTimeout(() => {
                 console.log("Clearing selectedProblem");
                 setSelectedProblem(null);
@@ -434,20 +434,25 @@ export default function HomeScreen() {
             <ProblemDescription
                 visible={descriptionModalVisible}
                 onClose={() => {
-                    //console.log("Closing description modal");
                     setDescriptionModalVisible(false);
                 }}
                 problem={modalProblem}
+                onOpenNotes={(problem) => {
+                    setModalProblem(problem);
+                    setNotesModalVisible(true);
+                }}
             />
 
             <NotesModal
                 visible={notesModalVisible}
                 onClose={() => {
-                    //console.log("Closing notes modal");
                     setNotesModalVisible(false);
-                    // Description modal remains open
                 }}
                 problem={modalProblem}
+                onOpenDescription={(problem) => {
+                    setModalProblem(problem);
+                    setDescriptionModalVisible(true);
+                }}
             />
 
             <SolutionModal
