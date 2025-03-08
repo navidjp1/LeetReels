@@ -90,6 +90,7 @@ export function AuthModal({ visible, onClose, onSuccess }: AuthModalProps) {
                             onChangeText={setEmail}
                             autoCapitalize="none"
                             keyboardType="email-address"
+                            placeholderTextColor="grey"
                         />
                         <TextInput
                             style={styles.input}
@@ -97,6 +98,7 @@ export function AuthModal({ visible, onClose, onSuccess }: AuthModalProps) {
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
+                            placeholderTextColor="grey"
                         />
                     </ThemedView>
 
@@ -173,6 +175,8 @@ const styles = StyleSheet.create({
         padding: 12,
         marginBottom: 15,
         fontSize: 16,
+        //backgroundColor: "white",
+        color: "white",
     },
     authButton: {
         backgroundColor: "#3e4a8a",

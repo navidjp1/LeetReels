@@ -1,13 +1,30 @@
 import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import "react-native-url-polyfill/auto";
+import Constants from "expo-constants";
 
-// Replace with your Supabase URL and anon key
-const supabaseUrl = "https://fwubqpvzotwpnlwtrdek.supabase.co";
-const supabaseAnonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dWJxcHZ6b3R3cG5sd3RyZGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA4NjU0ODQsImV4cCI6MjA1NjQ0MTQ4NH0.Jsn-dgxMQFe_E8nLjKbtCo84FgTDMgKDmxLjPzv4D5c";
+// Get environment variables
+const getSupabaseUrl = (): string => {
+    // First try to get from Constants.expoConfig.extra
+    if (Constants.expoConfig?.extra?.supabaseUrl) {
+        return Constants.expoConfig.extra.supabaseUrl;
+    }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    // Fallback to hardcoded value (for development)
+    return "";
+};
+
+const getSupabaseAnonKey = (): string => {
+    // First try to get from Constants.expoConfig.extra
+    if (Constants.expoConfig?.extra?.supabaseAnonKey) {
+        return Constants.expoConfig.extra.supabaseAnonKey;
+    }
+
+    // Fallback to hardcoded value (for development)
+    return "";
+};
+
+export const supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
     auth: {
         storage: AsyncStorage,
         autoRefreshToken: true,
